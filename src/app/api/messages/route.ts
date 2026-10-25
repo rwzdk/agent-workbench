@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db, ensureSchema } from '@/lib/db';
+import { ensureSchema, getDb } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth';
 
 export const runtime = 'nodejs';
@@ -19,6 +19,7 @@ export async function POST(req: Request) {
   }
 
   await ensureSchema();
+  const db = await getDb();
   const conv = await db.execute({
     sql: 'SELECT id, title FROM conversations WHERE id = ? AND user_id = ?',
     args: [conversationId, user.id],

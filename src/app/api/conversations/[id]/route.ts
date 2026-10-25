@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { db, ensureSchema } from '@/lib/db';
+import { ensureSchema, getDb } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
 async function ownedConversation(id: number, userId: number) {
+  const db = await getDb();
   const rs = await db.execute({
     sql: 'SELECT id, title FROM conversations WHERE id = ? AND user_id = ?',
     args: [id, userId],
@@ -12,16 +13,18 @@ async function ownedConversation(id: number, userId: number) {
   return rs.rows[0] ?? null;
 }
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: '未登录' }, { status: 401 });
-  const id = Number(params.id);
+  const { id: rawId } = await params;
+  const id = Number(rawId);
   if (!Number.isInteger(id)) return NextResponse.json({ error: '参数错误' }, { status: 400 });
 
   await ensureSchema();
   const conv = await ownedConversation(id, user.id);
   if (!conv) return NextResponse.json({ error: '对话不存在' }, { status: 404 });
 
+  const db = await getDb();
   const rs = await db.execute({
     sql: 'SELECT id, role, content, tool_invocations FROM messages WHERE conversation_id = ? ORDER BY id ASC',
     args: [id],
@@ -37,16 +40,18 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   });
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: '未登录' }, { status: 401 });
-  const id = Number(params.id);
+  const { id: rawId } = await params;
+  const id = Number(rawId);
   if (!Number.isInteger(id)) return NextResponse.json({ error: '参数错误' }, { status: 400 });
 
   await ensureSchema();
   const conv = await ownedConversation(id, user.id);
   if (!conv) return NextResponse.json({ error: '对话不存在' }, { status: 404 });
 
+  const db = await getDb();
   await db.execute({ sql: 'DELETE FROM messages WHERE conversation_id = ?', args: [id] });
   await db.execute({ sql: 'DELETE FROM conversations WHERE id = ?', args: [id] });
   return NextResponse.json({ ok: true });

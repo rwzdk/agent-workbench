@@ -1,6 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { db, ensureSchema } from './db';
+import { ensureSchema, getDb } from './db';
 import { evaluateExpression } from './calc';
 
 export function createTools(userId: number) {
@@ -78,6 +78,7 @@ export function createTools(userId: number) {
       }),
       execute: async ({ title, content }) => {
         await ensureSchema();
+        const db = await getDb();
         const rs = await db.execute({
           sql: 'INSERT INTO notes (user_id, title, content) VALUES (?, ?, ?)',
           args: [userId, title, content],
@@ -93,6 +94,7 @@ export function createTools(userId: number) {
       }),
       execute: async ({ query }) => {
         await ensureSchema();
+        const db = await getDb();
         const rs = await db.execute({
           sql: `SELECT id, title, content, created_at FROM notes
                 WHERE user_id = ? AND (title LIKE ? OR content LIKE ?)

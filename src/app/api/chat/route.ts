@@ -2,7 +2,7 @@ import { createDataStreamResponse, formatDataStreamPart, streamText, type CoreMe
 import { createOpenAI } from '@ai-sdk/openai';
 import { getSessionUser } from '@/lib/auth';
 import { createTools } from '@/lib/tools';
-import { db, ensureSchema } from '@/lib/db';
+import { ensureSchema, getDb } from '@/lib/db';
 import { evaluateExpression } from '@/lib/calc';
 
 export const runtime = 'nodejs';
@@ -61,6 +61,7 @@ function createDemoResponse(userId: number) {
       );
       await sleep(700);
       await ensureSchema();
+      const db = await getDb();
       const rs = await db.execute({
         sql: 'INSERT INTO notes (user_id, title, content) VALUES (?, ?, ?)',
         args: [userId, '计算结果', noteContent],

@@ -2,6 +2,8 @@
 
 一个从零实现的全栈 AI Agent 工作台：**Next.js + Vercel AI SDK**，支持流式对话、多步工具调用（过程可视化）、用户认证与会话持久化。
 
+**🚀 线上 Demo**：<https://agent-workbench.qixin-study.workers.dev>（注册即用，未配置模型 Key 时自动进入演示模式——模拟提问 + 真实工具执行）
+
 ![screenshot](docs/screenshot-chat.png)
 
 > 定位：学习型 / 简历项目。不含任何从其他项目复制的代码，架构与实现均可逐行讲解。
@@ -105,8 +107,13 @@ src/
 
 ## 部署
 
-- **Vercel**：导入仓库即可，环境变量在面板配置；Serverless 文件系统只读，数据库需配置远程 `LIBSQL_URL`（推荐 [Turso](https://turso.tech) 免费档，创建后把地址与令牌填入环境变量）。
-- **自托管**：`npm run build && npm start`，本地 SQLite 文件即可工作。
+- **Cloudflare Workers（当前线上方案）**：OpenNext 适配 + Cloudflare D1 数据库。数据库层做了双实现（`src/lib/db.ts`：D1 / libSQL 同一接口），一条命令部署：
+  ```bash
+  npx wrangler d1 create agent-workbench   # 把返回的 database_id 填入 wrangler.jsonc
+  npm run deploy
+  ```
+- **Node 自托管**：`npm run build && npm start`，本地 SQLite 文件即可工作。
+- **Vercel**：导入仓库 + 配置远程 `LIBSQL_URL`（[Turso](https://turso.tech) 免费档）亦可。
 
 ## 简历可以这样写（示例）
 
@@ -114,6 +121,7 @@ src/
 - 基于 Vercel AI SDK 实现服务端流式输出（SSE）与 Function Calling 多步执行循环，工具调用过程在 UI 全程可视化
 - 手写表达式解析器替代 `eval` 实现安全计算工具；实现 httpOnly Cookie 服务端会话与 bcrypt 密码哈希
 - 为核心模块编写单元测试并搭建 GitHub Actions CI（类型检查 / 测试 / 构建三道门禁）
+- 部署至 Cloudflare Workers（OpenNext 适配 + D1 数据库），数据库层实现 D1 / libSQL 双后端统一接口，本地与云端同一套业务代码
 
 ## Roadmap
 

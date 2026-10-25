@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db, ensureSchema } from '@/lib/db';
+import { ensureSchema, getDb } from '@/lib/db';
 import { createSession, verifyPassword } from '@/lib/auth';
 
 export const runtime = 'nodejs';
@@ -18,6 +18,7 @@ export async function POST(req: Request) {
   const { email, password } = parsed.data;
 
   await ensureSchema();
+  const db = await getDb();
   const rs = await db.execute({
     sql: 'SELECT id, password_hash FROM users WHERE email = ?',
     args: [email],
