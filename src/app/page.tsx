@@ -44,7 +44,7 @@ export default async function Home() {
             开始使用
           </Link>
           <a
-            href="https://github.com/your-name/agent-workbench"
+            href="https://github.com/rwzdk/agent-workbench"
             className="rounded-xl border border-slate-700 px-6 py-3 text-sm transition-colors hover:bg-slate-900"
           >
             GitHub
