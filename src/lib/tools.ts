@@ -2,9 +2,10 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { ensureSchema, getDb } from './db';
 import { evaluateExpression } from './calc';
+import { recordTrace } from './trace';
 
 export function createTools(userId: number) {
-  return {
+  const tools = {
     calculator: tool({
       description: '计算数学表达式，支持 + - * / % ^ 和括号，例如 "(1+2)*3^2"。需要精确结果时务必使用。',
       parameters: z.object({
@@ -114,4 +115,33 @@ export function createTools(userId: number) {
       },
     }),
   };
+
+  // 可观测：包装每个工具的 execute，记录调用耗时与成败（追踪失败不影响工具本身）
+  type ToolUnion = (typeof tools)[keyof typeof tools];
+  return Object.fromEntries(
+    (Object.entries(tools) as [string, ToolUnion][]).map(([name, t]) => [
+      name,
+      {
+        ...t,
+        execute: async (args: never, options: never) => {
+          const startedAt = Date.now();
+          try {
+            const result = await t.execute(args, options);
+            await recordTrace({ userId, kind: 'tool', name, durationMs: Date.now() - startedAt, ok: true });
+            return result;
+          } catch (e) {
+            await recordTrace({
+              userId,
+              kind: 'tool',
+              name,
+              durationMs: Date.now() - startedAt,
+              ok: false,
+              meta: { error: e instanceof Error ? e.message : String(e) },
+            });
+            throw e;
+          }
+        },
+      },
+    ]),
+  ) as unknown as typeof tools;
 }

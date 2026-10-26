@@ -78,12 +78,20 @@ export default function Sidebar({
 
         <div className="border-t border-slate-800 px-4 py-3">
           <p className="truncate text-xs text-slate-400">{email}</p>
-          <button
-            onClick={onLogout}
-            className="mt-2 text-xs text-slate-500 transition-colors hover:text-slate-300"
-          >
-            退出登录
-          </button>
+          <div className="mt-2 flex items-center gap-3">
+            <a
+              href="/stats"
+              className="text-xs text-slate-500 transition-colors hover:text-slate-300"
+            >
+              📊 使用统计
+            </a>
+            <button
+              onClick={onLogout}
+              className="text-xs text-slate-500 transition-colors hover:text-slate-300"
+            >
+              退出登录
+            </button>
+          </div>
         </div>
       </aside>
     </>

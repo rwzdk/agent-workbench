@@ -128,6 +128,18 @@ const DDL: string[] = [
   `CREATE INDEX IF NOT EXISTS idx_conversations_user ON conversations(user_id, updated_at DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, id)`,
   `CREATE INDEX IF NOT EXISTS idx_notes_user ON notes(user_id, id DESC)`,
+  `CREATE TABLE IF NOT EXISTS traces (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    conversation_id INTEGER,
+    kind TEXT NOT NULL,
+    name TEXT NOT NULL,
+    duration_ms INTEGER NOT NULL,
+    ok INTEGER NOT NULL DEFAULT 1,
+    meta TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_traces_user ON traces(user_id, id DESC)`,
 ];
 
 let schemaPromise: Promise<unknown> | null = null;

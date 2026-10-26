@@ -4,6 +4,7 @@ import { getSessionUser } from '@/lib/auth';
 import { createTools } from '@/lib/tools';
 import { ensureSchema, getDb } from '@/lib/db';
 import { evaluateExpression } from '@/lib/calc';
+import { recordTrace } from '@/lib/trace';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -24,8 +25,10 @@ function createDemoResponse(userId: number) {
     execute: async (writer) => {
       const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
       const expression = '(1234 * 56 / 7) ^ 0.5';
+      const demoStartedAt = Date.now();
       const value = evaluateExpression(expression);
       const noteContent = `${expression} = ${value.toFixed(4)}`;
+      await recordTrace({ userId, kind: 'tool', name: 'calculator', durationMs: Date.now() - demoStartedAt, ok: true });
 
       writer.write(
         formatDataStreamPart(
@@ -60,12 +63,14 @@ function createDemoResponse(userId: number) {
         }),
       );
       await sleep(700);
+      const noteStartedAt = Date.now();
       await ensureSchema();
       const db = await getDb();
       const rs = await db.execute({
         sql: 'INSERT INTO notes (user_id, title, content) VALUES (?, ?, ?)',
         args: [userId, '计算结果', noteContent],
       });
+      await recordTrace({ userId, kind: 'tool', name: 'save_note', durationMs: Date.now() - noteStartedAt, ok: true });
       writer.write(
         formatDataStreamPart('tool_result', {
           toolCallId: 'demo-note',
@@ -81,6 +86,7 @@ function createDemoResponse(userId: number) {
             '在 `.env` 中配置 `OPENAI_API_KEY`（支持 DeepSeek 等任何 OpenAI 兼容接口）后，任意问题都会走真实的多步 Agent 流程。',
         ),
       );
+      await recordTrace({ userId, kind: 'chat', name: 'demo-mode', durationMs: Date.now() - demoStartedAt, ok: true });
     },
   });
 }
@@ -105,6 +111,8 @@ export async function POST(req: Request) {
 
   const openai = createOpenAI({ apiKey, baseURL: process.env.OPENAI_BASE_URL || undefined });
   const modelId = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+  const conversationId = Number.isInteger(Number(body?.conversationId)) ? Number(body.conversationId) : null;
+  const chatStartedAt = Date.now();
 
   const result = streamText({
     model: openai(modelId),
@@ -112,6 +120,22 @@ export async function POST(req: Request) {
     messages,
     tools: createTools(user.id),
     maxSteps: 5,
+    onFinish: ({ usage, finishReason }) => {
+      // 可观测：整次请求的耗时与 token 用量（追踪失败不影响响应流）
+      void recordTrace({
+        userId: user.id,
+        conversationId,
+        kind: 'chat',
+        name: modelId,
+        durationMs: Date.now() - chatStartedAt,
+        ok: true,
+        meta: {
+          promptTokens: usage?.promptTokens,
+          completionTokens: usage?.completionTokens,
+          finishReason,
+        },
+      });
+    },
   });
 
   return result.toDataStreamResponse();
