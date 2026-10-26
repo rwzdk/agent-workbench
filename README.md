@@ -27,7 +27,7 @@
 
 | 层 | 选型 |
 | --- | --- |
-| 前端 | Next.js 14 (App Router) · React 18 · TypeScript · Tailwind CSS |
+| 前端 | Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS |
 | Agent | Vercel AI SDK v4（`streamText` + `tool` + `useChat`） |
 | 后端 | Next.js Route Handlers（Node.js runtime） |
 | 数据库 | SQLite（libSQL client，本地文件 / Turso 远程均可） |
@@ -117,7 +117,7 @@ src/
 
 ## 简历可以这样写（示例）
 
-- 独立设计并实现全栈 AI Agent 应用（Next.js 14 / TypeScript / SQLite），支持流式对话、多步工具调用与会话持久化
+- 独立设计并实现全栈 AI Agent 应用（Next.js 15 / TypeScript / SQLite），支持流式对话、多步工具调用与会话持久化
 - 基于 Vercel AI SDK 实现服务端流式输出（SSE）与 Function Calling 多步执行循环，工具调用过程在 UI 全程可视化
 - 手写表达式解析器替代 `eval` 实现安全计算工具；实现 httpOnly Cookie 服务端会话与 bcrypt 密码哈希
 - 为核心模块编写单元测试并搭建 GitHub Actions CI（类型检查 / 测试 / 构建三道门禁）
